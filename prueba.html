@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Resultados de partidos del grupo A - Mundial de Rusia 2018</title>
+</head>
+
+<body>
+    <style>
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input {
+            width: 25px;
+            text-align: center;
+        }
+
+        table {
+            text-align: center;
+        }
+
+        html {
+            font-family: monospace;
+            background-color: cadetblue;
+        }
+
+        .table {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+        }
+
+        .table td,
+        .table th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .table tr {
+            background-color: #fff;
+        }
+
+        .table tr:hover {
+            background-color: #ddd;
+        }
+
+        .table th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #container {
+            background-color: cadetblue;
+            display: flex;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 10vh;
+        }
+        h2{
+            color: orangered;
+        }
+        @media screen and (max-width:676px){
+            #container{
+                zoom: 80%;
+            }
+            .table{
+                margin-bottom: 10px
+            }
+        }
+    </style>
+
+    <div id="container">
+        <h1>Ejercicio Oppen Apps</h1>
+        <tablero v-bind:partidos="partidos" v-on:onenter="changeOrder($event)"></tablero>
+        <posiciones v-bind:posiciones="posiciones"></posiciones>
+        <blockquote>
+            <h2>NOTA:</h2>
+            <p>
+                El ejercicio se realizó en base a los criterios anteriormente definidos. Se considera lo siguiente:
+            </p>
+            <ol>
+                <li>Mayor cantidad de puntos obtenidos</li>
+                <li>Mayor diferencia de goles (goles convertidos menos goles recibidos)</li>
+                <li>Mayor cantidad de goles convertidos</li>
+                <li>sorteo (random)</li>
+            </ol>
+        </blockquote>
+    </div>
+    <!-- Primero Componente -->
+    <template id="partidos" v-if="partidos">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Paises</th>
+                    <th>Goles</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(item, index) in partidos">
+                    <td>
+                        {{item.equipo1}} VS {{item.equipo2}}
+                    </td>
+                    <td>
+                        <input @keyup="add" type="number" v-model="item.goles1"> a
+                        <input @keyup="add" type="number" v-model="item.goles2">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </template>
+    <!-- Segundo componente -->
+    <template id="posiciones">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th colspan="5">Posiciones</th>
+                </tr>
+                <tr>
+                    <th>Numero</th>
+                    <th>Pais</th>
+                    <th>Puntos</th>
+                    <th>Diferencia de goles</th>
+                    <th>Goles Convertidos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(item, index) in posiciones">
+                    <td>
+                        {{index + 1}}
+                    </td>
+                    <td>
+                        {{item.equipo}}
+                    </td>
+                    <td>
+                        {{item.puntos}}
+                    </td>
+                    <td>
+                        {{item.diferenciaGoles}}
+                    </td>
+                    <td>
+                        {{item.goles}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </template>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script type="text/javascript">
+    /* Componente tablero (Donde estan los inputs) */
+    Vue.component('tablero', {
+        template: '#partidos',
+        props: ['partidos'],
+        data: function () {
+            return {
+                posiciones: [],
+                individual: []
+            }
+        },
+        created: function () {
+            this.posiciones = this.partidos
+
+        },
+        methods: {
+            add: function () {
+                /* Seteo en 0 los campos */
+                this.individual.map((data, index) => {
+                    data.puntos = 0
+                    data.goles = 0
+                    data.golesRecibidos = 0
+                })
+                /* actualizo los equipos y los goles para el arreglo de posiciones */
+                this.partidos.map((data, index) => this.individual.push({ equipo: data.equipo1, goles: data.goles1, puntos: 0 }, { equipo: data.equipo2, goles: data.goles2, puntos: 0 }))
+                /* Me aseguro que ningun campo se repita */
+                let hash = {};
+                const existe = this.individual.filter(function (actual) {
+                    var exists = !hash[actual.equipo] || false;
+                    hash[actual.equipo] = true;
+                    return exists;
+                });
+                this.individual = existe;
+                /* Recorro los arreglos segun las condicionales */
+                this.partidos.map((data, index) => {
+                    const ex = (equipo1, equipo2, goles1, goles2) => {
+                        for (let index = 0; index < this.individual.length; index++) {
+                            if (this.individual[index].equipo == equipo1) {
+                                this.individual[index].puntos = Number(this.individual[index].puntos) + 3;
+                                this.individual[index].goles = Number(this.individual[index].goles) + Number(goles1);
+                                this.individual[index].golesRecibidos = Number(this.individual[index].golesRecibidos) + Number(goles2);
+                                this.individual[index].diferenciaGoles = Number(this.individual[index].goles) - Number(this.individual[index].golesRecibidos);
+                            } else if (this.individual[index].equipo == equipo2) {
+                                this.individual[index].golesRecibidos = Number(this.individual[index].golesRecibidos) + Number(goles1);
+                                this.individual[index].goles = Number(this.individual[index].goles) + Number(goles2);
+                                this.individual[index].diferenciaGoles = Number(this.individual[index].goles) - Number(this.individual[index].golesRecibidos);
+                            }
+                        }
+                    }
+                    if (data.goles1 > data.goles2 && data.goles1 != '' && data.goles2 != '') {
+                        ex(data.equipo1, data.equipo2, data.goles1, data.goles2)
+                    } else if (data.goles1 < data.goles2 && data.goles1 != '' && data.goles2 != '') {
+                        ex(data.equipo2, data.equipo1, data.goles2, data.goles1)
+                    } else if (data.goles1 == data.goles2 && data.goles1 != '' && data.goles2 != '') {
+                        for (let index = 0; index < this.individual.length; index++) {
+                            if (this.individual[index].equipo == data.equipo2) {
+                                this.individual[index].golesRecibidos = Number(this.individual[index].golesRecibidos) + Number(data.goles1);
+                                this.individual[index].puntos = Number(this.individual[index].puntos) + 1;
+                                this.individual[index].goles = Number(this.individual[index].goles) + Number(data.goles2);
+                                this.individual[index].diferenciaGoles = Number(this.individual[index].goles) - Number(this.individual[index].golesRecibidos);
+                            } else if (this.individual[index].equipo == data.equipo1) {
+                                this.individual[index].golesRecibidos = Number(this.individual[index].golesRecibidos) + Number(data.goles2);
+                                this.individual[index].puntos = Number(this.individual[index].puntos) + 1;
+                                this.individual[index].goles = Number(this.individual[index].goles) + Number(data.goles1);
+                                this.individual[index].diferenciaGoles = Number(this.individual[index].goles) - Number(this.individual[index].golesRecibidos);
+                            }
+                        }
+                    }
+                })
+                /* creo la variable random */
+                const random = Math.floor(Math.random() * (1 - -2) - 1)
+                /* Comparo la data y actualizo las posiciones segun los criterios, cuando los criterios se repitan
+                el orden sera random */
+                const posiciones = this.individual.sort(function (a, b) {
+                    if (a.puntos > b.puntos || a.diferenciaGoles > b.diferenciaGoles || a.goles > b.goles) {
+                        return -1;
+                    }
+                    if (a.puntos < b.puntos || a.diferenciaGoles < b.diferenciaGoles || a.goles < b.goles) {
+                        return 1;
+                    }
+                    return random;
+                });
+                this.individual = posiciones
+                /* Paso la data de las posiciones al componente padre, para luego pasarla al otro hijo */
+                this.$emit('onenter', this.individual);
+            }
+        }
+    })
+    /* Componente posiciones */
+    Vue.component('posiciones', {
+        template: '#posiciones',
+        props: ['posiciones'],
+
+        methods: {
+            add: function () {
+                this.posiciones.push(this.partidos)
+            }
+        }
+    })
+    new Vue({
+        el: '#container',
+        data: {
+            partidos: [
+                { equipo1: 'Rusia', equipo2: 'Arabia', goles1: '', goles2: '', golesRecibidos1: '', golesRecibidos2: '' },
+                { equipo1: 'Egipto', equipo2: 'Uruguay', goles1: '', goles2: '', golesRecibidos1: '', golesRecibidos2: '' },
+                { equipo1: 'Rusia', equipo2: 'Egipto', goles1: '', goles2: '', golesRecibidos1: '', golesRecibidos2: '' },
+                { equipo1: 'Uruguay', equipo2: 'Arabia', goles1: '', goles2: '', golesRecibidos1: '', golesRecibidos2: '' },
+                { equipo1: 'Uruguay', equipo2: 'Rusia', goles1: '', goles2: '', golesRecibidos1: '', golesRecibidos2: '' },
+                { equipo1: 'Arabia', equipo2: 'Egipto', goles1: '', goles2: '', golesRecibidos1: '', golesRecibidos2: '' },
+            ],
+            posiciones: [
+                { equipo: 'Arabia' },
+                { equipo: 'Rusia' },
+                { equipo: 'Uruguay' },
+                { equipo: 'Egipto' }]
+        },
+        methods: {
+            changeOrder: function (data) {
+                /* funcion que se activa desde el componente hijo (tablero) para actualizar las posiciones */
+                this.posiciones = data
+            },
+        }
+    })
+</script>
+
+</html>
